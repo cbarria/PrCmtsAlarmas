@@ -15,6 +15,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +44,6 @@ public class PrCmtsAlarmas {
 
 	private JFrame frmPuertoRicoCmts;
 	private final JProgressBar progressBar = new JProgressBar();
-	private JProgressBar progressBarOffline;
 
 	private JLabel lblTiempo;
 	private JLabel lblMensaje;
@@ -53,6 +53,8 @@ public class PrCmtsAlarmas {
 	private String[][] CMTSinfoCasa;
 	private String[][] listaServidores;
 	private static Calendar cal;
+	
+	private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
 	private String prompt = null;
 	private Socket socket = null;
@@ -60,10 +62,8 @@ public class PrCmtsAlarmas {
 	private InputStream in = null;
 
 	private JTable table;
-	private JTable tableoffline;
 	private DefaultTableModel modeloffline;
 	private DefaultTableModel model;
-	private JButton btnCheckOffline;
 
 	private Boolean SweepNow = true;
 
@@ -98,7 +98,7 @@ public class PrCmtsAlarmas {
 		frmPuertoRicoCmts = new JFrame();
 		frmPuertoRicoCmts.setIconImage(Toolkit.getDefaultToolkit().getImage(PrCmtsAlarmas.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
 		frmPuertoRicoCmts.setTitle("Puerto Rico CMTS Alarmas");
-		frmPuertoRicoCmts.setBounds(100, 100, 1252, 910);
+		frmPuertoRicoCmts.setBounds(100, 100, 904, 910);
 		frmPuertoRicoCmts.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmPuertoRicoCmts.setLocationRelativeTo(null);
 		JMenuBar menuBar = new JMenuBar();
@@ -144,17 +144,17 @@ public class PrCmtsAlarmas {
 		//frmPuertoRicoCmts.setExtendedState(JFrame.MAXIMIZED_BOTH); //Full Screen
 		frmPuertoRicoCmts.setResizable(false);
 		frmPuertoRicoCmts.getContentPane().setLayout(null);
-		progressBar.setBounds(10, 716, 998, 25);
+		progressBar.setBounds(10, 716, 872, 25);
 		progressBar.setValue(0);
 		progressBar.setStringPainted(true);
 		frmPuertoRicoCmts.getContentPane().add(progressBar);
 
 		lblTiempo = new JLabel("Tiempo:");
-		lblTiempo.setBounds(815, 11, 137, 14);
+		lblTiempo.setBounds(740, 11, 137, 14);
 		frmPuertoRicoCmts.getContentPane().add(lblTiempo);
 
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 36, 998, 670);
+		scrollPane.setBounds(10, 36, 872, 670);
 		frmPuertoRicoCmts.getContentPane().add(scrollPane);
 		//                                                              0       1         2       3           4       5       6        7       8          9       10         11      12      13    14
 		JTable table = new JTable(new DefaultTableModel(new Object[] { "Hora", "Sector", "CMTS", "Interfaz", "Mac", "Conn", "Total", "Oper", "Disable", "Init", "Offline", "%Oper", "Nodo", "IP", "Tipo" }, 0));
@@ -169,8 +169,8 @@ public class PrCmtsAlarmas {
 
 		model = (DefaultTableModel) table.getModel();
 
-		table.getColumnModel().getColumn(0).setPreferredWidth(180);
-		table.getColumnModel().getColumn(1).setPreferredWidth(120);
+		table.getColumnModel().getColumn(0).setPreferredWidth(80);
+		table.getColumnModel().getColumn(1).setPreferredWidth(60);
 		table.getColumnModel().getColumn(2).setPreferredWidth(80);
 		table.getColumnModel().getColumn(3).setPreferredWidth(50);
 
@@ -193,56 +193,19 @@ public class PrCmtsAlarmas {
 		frmPuertoRicoCmts.getContentPane().add(lblMensaje);
 
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(10, 747, 998, 103);
+		scrollPane_1.setBounds(10, 752, 872, 98);
 		frmPuertoRicoCmts.getContentPane().add(scrollPane_1);
 
 		txtStatus = new JTextArea();
 		DefaultCaret caret = (DefaultCaret) txtStatus.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		scrollPane_1.setViewportView(txtStatus);
-
-		JScrollPane scrollPane_2 = new JScrollPane();
-		scrollPane_2.setBounds(1018, 74, 218, 632);
-		frmPuertoRicoCmts.getContentPane().add(scrollPane_2);
-
-		tableoffline = new JTable(new DefaultTableModel(new Object[] { "Tiempo Offline", "MAC" }, 0));
-		scrollPane_2.setViewportView(tableoffline);
-
-		progressBarOffline = new JProgressBar();
-		progressBarOffline.setForeground(Color.RED);
-		progressBarOffline.setBounds(1018, 715, 218, 26);
-		frmPuertoRicoCmts.getContentPane().add(progressBarOffline);
-
-		btnCheckOffline = new JButton("Check Offline");
-		btnCheckOffline.setEnabled(false);
-		btnCheckOffline.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				btnCheckOffline.setEnabled(false);
-				Thread checkoffline = new Thread() {
-					public void run() {
-
-						progressBarOffline.setIndeterminate(true);
-						String interfaz = model.getValueAt(table.getSelectedRow(), 3).toString();
-						String server = model.getValueAt(table.getSelectedRow(), 13).toString();
-						String Tipo = model.getValueAt(table.getSelectedRow(), 14).toString();
-						interfaceOffline(interfaz, server, "hmartinez", "hmartinez66", Tipo);
-						btnCheckOffline.setEnabled(true);
-						progressBarOffline.setIndeterminate(false);
-
-					}
-				};
-				checkoffline.start();
-			}
-		});
-		btnCheckOffline.setBounds(1018, 39, 121, 23);
-		frmPuertoRicoCmts.getContentPane().add(btnCheckOffline);
-		modeloffline = (DefaultTableModel) tableoffline.getModel();
 	}
 
 	public class Worker1 extends SwingWorker<String, String> {
 		@Override
 		protected String doInBackground() throws Exception {
-			btnCheckOffline.setEnabled(false);
+			
 			long lastTime = System.currentTimeMillis();
 			while (true) {
 
@@ -252,14 +215,14 @@ public class PrCmtsAlarmas {
 
 				if (SweepNow) {
 					coreSweep(listaServidores);
-					btnCheckOffline.setEnabled(true);
+					
 					SweepNow = false;
 					lastTime = System.currentTimeMillis();
 
 				} else if (System.currentTimeMillis() - lastTime > (1000 * 60 * 15)) {
 					System.out.println("Auto Start by Time");
 					coreSweep(listaServidores);
-					btnCheckOffline.setEnabled(true);
+					
 					lastTime = System.currentTimeMillis(); //Sacar para repetir!
 				}
 			}
@@ -328,7 +291,7 @@ public class PrCmtsAlarmas {
 					for (int j = 0; j < (CMTSinfo.length); j++) { // -1
 						if (CMTSinfo[j].length == 10) { //debe tener nombre
 							if (Integer.parseInt(CMTSinfo[j][7]) > 9) {//clientes offline > 9
-								model.addRow(new Object[] { cal.getTime(), listaServidores[i][0], listaServidores[i][1], CMTSinfo[j][0], CMTSinfo[j][1], CMTSinfo[j][2], CMTSinfo[j][3], CMTSinfo[j][4], CMTSinfo[j][5], CMTSinfo[j][6], CMTSinfo[j][7], CMTSinfo[j][8], CMTSinfo[j][9], listaServidores[i][2], listaServidores[i][4] });
+								model.addRow(new Object[] { sdf.format(cal.getTime()), listaServidores[i][0], listaServidores[i][1], CMTSinfo[j][0], CMTSinfo[j][1], CMTSinfo[j][2], CMTSinfo[j][3], CMTSinfo[j][4], CMTSinfo[j][5], CMTSinfo[j][6], CMTSinfo[j][7], CMTSinfo[j][8], CMTSinfo[j][9], listaServidores[i][2], listaServidores[i][4] });
 
 							}
 						}
@@ -345,7 +308,7 @@ public class PrCmtsAlarmas {
 						if (CMTSinfoCasa[j].length == 7) { //debe tener nombre
 							if (Integer.parseInt(CMTSinfoCasa[j][5]) > 9) {//clientes offline > 9
 								int percent = (int) ((Float.valueOf(CMTSinfoCasa[j][5]) * 100.0f) / Float.valueOf(CMTSinfoCasa[j][1]));
-								model.addRow(new Object[] { cal.getTime(), listaServidores[i][0], listaServidores[i][1], CMTSinfoCasa[j][0], "----", "----", CMTSinfoCasa[j][1], CMTSinfoCasa[j][2], CMTSinfoCasa[j][3], CMTSinfoCasa[j][4], CMTSinfoCasa[j][5], ((100-percent)+"%"), CMTSinfoCasa[j][6] });
+								model.addRow(new Object[] { sdf.format(cal.getTime()), listaServidores[i][0], listaServidores[i][1], CMTSinfoCasa[j][0], "----", "----", CMTSinfoCasa[j][1], CMTSinfoCasa[j][2], CMTSinfoCasa[j][3], CMTSinfoCasa[j][4], CMTSinfoCasa[j][5], ((100-percent)+"%"), CMTSinfoCasa[j][6] });
 
 							}
 						}
@@ -375,10 +338,10 @@ public class PrCmtsAlarmas {
 				}
 
 			} catch (IOException e) {
-				txtStatus.append("\nError: " + e.getMessage() + " Reintentando! " + (retrys + 1) + " de 3.\n");
+				txtStatus.append("\nError: " + e.getMessage() + " Reintentando! " + (retrys + 1) + " de 10.\n");
 				desconectado = true;
 				retrys++;
-				if (retrys >= 3) {
+				if (retrys >= 10) {
 					desconectado = false;
 					return null;
 				}
@@ -428,7 +391,7 @@ public class PrCmtsAlarmas {
 			try {
 				socket = new Socket();
 				//socket.setSoTimeout(10000);
-				socket.connect(new InetSocketAddress(server, 23), 10000);
+				socket.connect(new InetSocketAddress(server, 23), 2000);
 				out = new PrintStream(socket.getOutputStream());
 				in = socket.getInputStream();
 
@@ -438,10 +401,10 @@ public class PrCmtsAlarmas {
 				}
 
 			} catch (IOException e) {
-				txtStatus.append("\nError: " + e.getMessage() + ", reintentando! " + (retrys + 1) + " de 3\n");
+				txtStatus.append("\nError: " + e.getMessage() + ", reintentando! " + (retrys + 1) + " de 10\n");
 				desconectado = true;
 				retrys++;
-				if (retrys >= 3) {
+				if (retrys >= 10) {
 					desconectado = false;
 					return null;
 				}
@@ -599,7 +562,7 @@ public class PrCmtsAlarmas {
                       System.arraycopy(buffer, 0, redData, 0, red);
                       redDataText = new String(redData, "UTF-8");
                       sb.append(redDataText);
-                      //System.out.print(redDataText);
+                      System.out.print(redDataText);
                       if (sb.toString().endsWith(pattern)) {
                     	  //System.out.println(sb.toString().endsWith(pattern));                  	  
 						  return sb.toString().replaceAll("\r", "");

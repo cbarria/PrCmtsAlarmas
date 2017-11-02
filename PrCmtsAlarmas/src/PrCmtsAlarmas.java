@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -39,6 +38,8 @@ import javax.swing.text.DefaultCaret;
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.Session;
 import ch.ethz.ssh2.StreamGobbler;
+import javax.swing.JTextField;
+import javax.swing.JPasswordField;
 
 public class PrCmtsAlarmas {
 
@@ -46,7 +47,6 @@ public class PrCmtsAlarmas {
 	private final JProgressBar progressBar = new JProgressBar();
 
 	private JLabel lblTiempo;
-	private JLabel lblMensaje;
 	private JTextArea txtStatus;
 
 	private String[][] CMTSinfo;
@@ -61,11 +61,12 @@ public class PrCmtsAlarmas {
 	private PrintStream out = null;
 	private InputStream in = null;
 
-	private JTable table;
-	private DefaultTableModel modeloffline;
+	// private JTable table;
 	private DefaultTableModel model;
 
 	private Boolean SweepNow = true;
+	private JTextField txtUsername;
+	private JPasswordField txtPassword;
 
 	/**
 	 * Launch the application.
@@ -187,11 +188,6 @@ public class PrCmtsAlarmas {
 
 		scrollPane.setViewportView(table);
 
-		lblMensaje = new JLabel("");
-		lblMensaje.setBounds(21, 11, 501, 14);
-		lblMensaje.setForeground(Color.red);
-		frmPuertoRicoCmts.getContentPane().add(lblMensaje);
-
 		JScrollPane scrollPane_1 = new JScrollPane();
 		scrollPane_1.setBounds(10, 752, 872, 98);
 		frmPuertoRicoCmts.getContentPane().add(scrollPane_1);
@@ -200,6 +196,23 @@ public class PrCmtsAlarmas {
 		DefaultCaret caret = (DefaultCaret) txtStatus.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		scrollPane_1.setViewportView(txtStatus);
+		
+		JLabel lblUsername = new JLabel("Username: ");
+		lblUsername.setBounds(10, 11, 71, 14);
+		frmPuertoRicoCmts.getContentPane().add(lblUsername);
+		
+		JLabel lblPassword = new JLabel("Password:");
+		lblPassword.setBounds(170, 11, 71, 14);
+		frmPuertoRicoCmts.getContentPane().add(lblPassword);
+		
+		txtUsername = new JTextField();
+		txtUsername.setBounds(74, 8, 86, 20);
+		frmPuertoRicoCmts.getContentPane().add(txtUsername);
+		txtUsername.setColumns(10);
+		
+		txtPassword = new JPasswordField();
+		txtPassword.setBounds(233, 8, 86, 20);
+		frmPuertoRicoCmts.getContentPane().add(txtPassword);
 	}
 
 	public class Worker1 extends SwingWorker<String, String> {
@@ -262,6 +275,7 @@ public class PrCmtsAlarmas {
 		return null;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void coreSweep(String[][] listaServidores) {
 
 		txtStatus.setText(null);
@@ -281,12 +295,13 @@ public class PrCmtsAlarmas {
 
 			//System.out.println(valorProgress* (i+1) + " " + listaServidores.length + " " +valorProgress);
 
-			if (listaServidores[i][4].equals("6K") || listaServidores[i][4].equals("C4")) {
+			if (listaServidores[i][4].equals("6K") || listaServidores[i][4].equals("6#") || listaServidores[i][4].equals("C4")) {
 				//listaServidores		
 				//Sector(0) - Nombre(1) - Url(2) - Puerto(3) - Tipo(4)
 				//  2/6/U11(0)  114(1)  20(2)  14(3)  11(4)  0(5)  3(6)  0(7)  78%(8)  LP007C(9)
 
-				CMTSinfo = getStatusCMTS(listaServidores[i][2], "hmartinez", "hmartinez66", listaServidores[i][4]);
+				//System.out.println(txtUsername.getText() + " " +  txtPassword.getText());
+				CMTSinfo = getStatusCMTS(listaServidores[i][2], txtUsername.getText(), txtPassword.getText(), listaServidores[i][4]);
 				if (CMTSinfo != null) {
 					for (int j = 0; j < (CMTSinfo.length); j++) { // -1
 						if (CMTSinfo[j].length == 10) { //debe tener nombre
@@ -302,7 +317,7 @@ public class PrCmtsAlarmas {
 				//Sector(0) - Nombre(1) - Url(2) - Puerto(3) - Tipo(4)
 				//  2/6/U11(0)  114(1)  20(2)  14(3)  11(4)  0(5)  3(6)  0(7)  78%(8)  LP007C(9)
 
-				CMTSinfoCasa = getStatusCMTSCasa(listaServidores[i][2], "hmartinez", "hmartinez66");
+				CMTSinfoCasa = getStatusCMTSCasa(listaServidores[i][2], txtUsername.getText(), txtPassword.getText());
 				if (CMTSinfoCasa != null) {
 					for (int j = 0; j < (CMTSinfoCasa.length); j++) { // -1
 						if (CMTSinfoCasa[j].length == 7) { //debe tener nombre
@@ -418,15 +433,27 @@ public class PrCmtsAlarmas {
 			ShowCableModemSummary = "show cable mode summary port | exclude 100% | 99% | 98% | 97% | 96% | 95% | 94% | 93% | 92% | Total | --|/D";
 			prompt = "6K>";
 		}
+		if (Tipo.equals("6#")) {
+			ShowCableModemSummary = "show cable mode summary port | exclude 100% | 99% | 98% | 97% | 96% | 95% | 94% | 93% | 92% | Total | --|/D";
+			prompt = "6K#";
+		}
 		if (Tipo.equals("C4")) {
 			ShowCableModemSummary = "show cable mode summary | exclude 100% | 99% | 98% | 97% | 96% | 95% | 94% | 93% | 92% | Total | --|/D";
-			prompt = "C4>";
+			prompt = "#";
 		}
 
+		/*if (Tipo.equals("6#")) { // servidor nuevo autentifica mas lento.
+			readUntil("username:");
+			write(user);
+			readUntil("password:");
+			write(password);
+		} else { 
+			write(user);
+			write(password);
+		}*/		
 
 		write(user);
 		write(password);
-
 		readUntil(prompt);
 
 		txtStatus.append("obteniendo datos...");
@@ -466,89 +493,6 @@ public class PrCmtsAlarmas {
 
 	}
 
-	public String interfaceOffline(String interfaz, String server, String user, String password, String Tipo) {
-		modeloffline.setRowCount(0);
-		Boolean desconectado = true;
-		int retrys = 0;
-		while (desconectado) {
-			try {
-				socket = new Socket();
-				socket.connect(new InetSocketAddress(server, 23), 10000);
-				out = new PrintStream(socket.getOutputStream());
-				in = socket.getInputStream();
-				if (socket.isConnected()) {
-					//txtStatus.append(" connectado! ");
-					desconectado = false;
-				}
-
-			} catch (IOException e) {
-				//txtStatus.append("\nError: " + e.getMessage() + ", reintentando! " + (retrys + 1) + " de 3\n");
-				desconectado = true;
-				retrys++;
-				if (retrys >= 3) {
-					desconectado = false;
-					return null;
-				}
-
-			}
-		}
-
-		String showOffline = null;
-		if (Tipo.equals("6K")) {
-			showOffline = String.format("show cable modem offline %s | exclude -- | MAC address | Offline", interfaz.replace("U", ""));
-			prompt = "6K>";
-		}
-		if (Tipo.equals("C4")) {
-			showOffline = String.format("show cable modem cable %s offline | exclude -- | MAC address | Offline|Found", interfaz.replace("U", ""));// show cable modem cable 14/31 offline | exclude ---- | MAC address | Offline|Found
-			prompt = "C4>";
-		}
-		
-		readUntil("Login:");
-		write(user);
-
-		readUntil("Password:");
-		write(password);
-
-		readUntil(prompt);
-
-		write(showOffline);
-		String response = readUntil(prompt);
-		System.out.println(response);
-		
-		if (response==null)
-			return null;
-		
-		BufferedReader reader = new BufferedReader(new StringReader(response));
-		String subString;
-
-		ArrayList<String> output = new ArrayList<String>();
-		try {
-			while ((subString = reader.readLine()) != null) {
-				if (!subString.trim().equals("")) {
-					//output.append(subString + "\n"); // Solo agrega las lineas que tienen contenido
-					output.add(subString.trim());
-					//System.out.println(subString);
-				}
-			}
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			txtStatus.setText("Error: " + e.getMessage());
-			return null;
-		}
-
-		if (output.size() < 2) {
-			return null;
-		}
-		String[][] resToArray = new String[(output.size() - 4)][8]; //Saca 2 Lineas del nuevo array  
-		for (int i = 2; i < (output.size() - 2); i++) { // Se salta 1 linea al principio, y 1 linea al final
-			resToArray[i - 2] = output.get(i).split("\\s+"); // Sube en 1 las lineas del indice (por la linea que se removió al principio)
-		}
-		for (int i = 0; i < resToArray.length; i++) {
-			modeloffline.addRow(new Object[] { resToArray[i][1], resToArray[i][6] });
-		}
-		return null;
-	}
 
 	public String readUntil(String pattern) {
         int red = -1;
@@ -562,7 +506,7 @@ public class PrCmtsAlarmas {
                       System.arraycopy(buffer, 0, redData, 0, red);
                       redDataText = new String(redData, "UTF-8");
                       sb.append(redDataText);
-                      System.out.print(redDataText);
+                      //System.out.print(redDataText); sacar para ver consola
                       if (sb.toString().endsWith(pattern)) {
                     	  //System.out.println(sb.toString().endsWith(pattern));                  	  
 						  return sb.toString().replaceAll("\r", "");
